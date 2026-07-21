@@ -1,0 +1,7 @@
+vendor name,service provided,data they access,contract exists
+Stripe,Payment processing,Customer payment card and billing data,Yes
+CoolMailer,Marketing email sends,Customer email addresses and names,Yes
+QuickNotes Inc,Internal note-taking app,No customer data,No
+DataWarehouseX,Analytics and BI,Aggregated usage analytics,Yes
+FreelanceDevCo,Contract engineering,Source code and API keys,No
+OfficeSnacks,Snack delivery,None,No

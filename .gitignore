@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+vendor_risk_history.csv
+vendor_risk_*.md
+!README.md
+.DS_Store
