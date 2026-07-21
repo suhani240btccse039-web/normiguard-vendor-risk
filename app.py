@@ -47,12 +47,39 @@ with st.sidebar:
 
 uploaded = st.file_uploader("Upload vendor CSV", type="csv")
 
-if not uploaded:
-    st.info("Upload a CSV to get started. Don't have one handy? Try the "
-            "`vendors_sample.csv` included in the repo.")
+col_a, col_b = st.columns([1, 3])
+with col_a:
+    use_sample = st.button("Try with sample data")
+
+if not uploaded and not use_sample and "csv_source" not in st.session_state:
+    st.info("Upload a CSV to get started, or click **Try with sample data** "
+            "to see it in action instantly.")
     st.stop()
 
-text_stream = io.StringIO(uploaded.getvalue().decode("utf-8-sig"))
+if uploaded:
+    csv_bytes = uploaded.getvalue()
+    csv_source = uploaded.name
+    st.session_state["csv_source"] = csv_source
+elif use_sample:
+    with open("vendors_sample.csv", "rb") as fh:
+        csv_bytes = fh.read()
+    csv_source = "vendors_sample.csv"
+    st.session_state["csv_source"] = csv_source
+    st.session_state["csv_bytes"] = csv_bytes
+else:
+    # a previous run already loaded the sample; button clicks don't persist
+    # the file across reruns, so keep using what was loaded before
+    csv_source = st.session_state["csv_source"]
+    if "csv_bytes" not in st.session_state:
+        with open("vendors_sample.csv", "rb") as fh:
+            st.session_state["csv_bytes"] = fh.read()
+    csv_bytes = st.session_state["csv_bytes"]
+
+if csv_source == "vendors_sample.csv":
+    st.caption("Showing results for the bundled `vendors_sample.csv` — "
+              "upload your own file above to assess real vendors.")
+
+text_stream = io.StringIO(csv_bytes.decode("utf-8-sig"))
 try:
     vendors = parse_vendor_rows(text_stream)
 except ValueError as e:
@@ -126,7 +153,7 @@ st.dataframe(
 for f in findings_sorted:
     st.markdown(f"**[{f['risk_rating']}] {f['vendor']}** — {f['recommendation']}")
 
-report_md = build_markdown_report(findings_sorted, framework["label"], uploaded.name,
+report_md = build_markdown_report(findings_sorted, framework["label"], csv_source,
                                   org, prepared_by or None)
 st.download_button(
     "Download markdown report", data=report_md,
