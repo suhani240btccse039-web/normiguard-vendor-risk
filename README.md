@@ -1,12 +1,25 @@
 # NormiGuard — Third-Party Vendor Risk Assessment
 
-A Python CLI tool that assesses third-party vendor risk against simplified
-**NIST CSF** or **ISO/IEC 27001** control frameworks, and produces a
-ranked markdown risk report with recommendations.
+A Python tool (CLI + web app) that assesses third-party vendor risk
+against simplified **NIST CSF** or **ISO/IEC 27001** control frameworks,
+and produces a ranked risk report with recommendations.
+
+**🔗 Live demo:** _add your Streamlit Community Cloud URL here after deploying_
 
 Built as part of a security/GRC internship project, to bring some
 structure to how vendor risk gets tracked instead of relying on ad-hoc
 spreadsheet judgement calls.
+
+## Two ways to use it
+
+- **`app.py`** — a Streamlit web app: upload a CSV, confirm risk ratings
+  in the browser, download the report. No install needed once deployed.
+- **`vendor_risk.py`** — the same logic as a CLI tool, with extra features
+  the web version doesn't have: risk-trend tracking across repeat runs
+  and a persistent history log (see below).
+
+Both share the same core assessment logic in `vendor_risk.py` — `app.py`
+imports from it rather than duplicating anything.
 
 ## What it does
 
@@ -42,6 +55,15 @@ can't be verified from a vendor list alone, so those are flagged for
 review — prioritized by data sensitivity — rather than faked as pass/fail.
 
 ## Usage
+
+### Web app
+
+```bash
+pip install -r requirements.txt
+streamlit run app.py
+```
+
+### CLI
 
 ```bash
 python3 vendor_risk.py vendors_sample.csv --report

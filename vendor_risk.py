@@ -165,35 +165,45 @@ HEADER_ALIASES = {
 }
 
 
-def read_vendors(csv_path):
-    """Read the vendor CSV. Returns a list of raw vendor row dicts."""
+def parse_vendor_rows(fh):
+    """Parse an already-open CSV file/text stream. Returns a list of raw vendor row dicts.
+
+    Shared by read_vendors() (CLI, opens a path) and anything else that
+    already has a file-like object (e.g. a web upload) — so the header
+    matching and validation logic only lives in one place.
+    """
     vendors = []
-    with open(csv_path, newline="", encoding="utf-8-sig") as fh:
-        reader = csv.DictReader(fh)
-        field_map = {}
-        for raw in reader.fieldnames or []:
-            key = HEADER_ALIASES.get(raw.strip().lower())
+    reader = csv.DictReader(fh)
+    field_map = {}
+    for raw in reader.fieldnames or []:
+        key = HEADER_ALIASES.get(raw.strip().lower())
+        if key:
+            field_map[raw] = key
+
+    required = {"vendor", "service", "data_access", "contract"}
+    missing = required - set(field_map.values())
+    if missing:
+        raise ValueError(
+            f"CSV is missing required column(s): {', '.join(sorted(missing))}. "
+            f"Expected headers like: vendor name, service provided, "
+            f"data they access, contract exists.")
+
+    for row in reader:
+        vendor_row = {}
+        for raw_header, value in row.items():
+            key = field_map.get(raw_header)
             if key:
-                field_map[raw] = key
-
-        required = {"vendor", "service", "data_access", "contract"}
-        missing = required - set(field_map.values())
-        if missing:
-            raise ValueError(
-                f"CSV is missing required column(s): {', '.join(sorted(missing))}. "
-                f"Expected headers like: vendor name, service provided, "
-                f"data they access, contract exists.")
-
-        for row in reader:
-            vendor_row = {}
-            for raw_header, value in row.items():
-                key = field_map.get(raw_header)
-                if key:
-                    vendor_row[key] = (value or "").strip()
-            if not vendor_row.get("vendor"):
-                continue
-            vendors.append(vendor_row)
+                vendor_row[key] = (value or "").strip()
+        if not vendor_row.get("vendor"):
+            continue
+        vendors.append(vendor_row)
     return vendors
+
+
+def read_vendors(csv_path):
+    """Read the vendor CSV from a file path. Returns a list of raw vendor row dicts."""
+    with open(csv_path, newline="", encoding="utf-8-sig") as fh:
+        return parse_vendor_rows(fh)
 
 
 # ------------------------------------------------------------------
@@ -426,11 +436,11 @@ def print_report(findings, framework_label, org):
     print("  That's the full picture — full write-up saved if you passed --report.\n")
 
 
-def write_report(findings, framework_label, csv_path, org, prepared_by=None):
-    """Write a markdown report — the actual deliverable."""
+def build_markdown_report(findings, framework_label, csv_path, org, prepared_by=None):
+    """Build the markdown report as a string. Used by both the CLI (which
+    writes it to disk) and anything else that wants the content directly
+    (e.g. a web app offering it as a download)."""
     today = datetime.date.today().isoformat()
-    stem = csv_path.rsplit("/", 1)[-1].rsplit(".", 1)[0]
-    filename = f"vendor_risk_{stem}_{today}.md"
 
     counts = {}
     for f in findings:
@@ -507,8 +517,17 @@ def write_report(findings, framework_label, csv_path, org, prepared_by=None):
         "",
     ]
 
+    return "\n".join(lines)
+
+
+def write_report(findings, framework_label, csv_path, org, prepared_by=None):
+    """Write the markdown report to disk — the CLI deliverable."""
+    today = datetime.date.today().isoformat()
+    stem = csv_path.rsplit("/", 1)[-1].rsplit(".", 1)[0]
+    filename = f"vendor_risk_{stem}_{today}.md"
+    content = build_markdown_report(findings, framework_label, csv_path, org, prepared_by)
     with open(filename, "w") as fh:
-        fh.write("\n".join(lines))
+        fh.write(content)
     return filename
 
 
