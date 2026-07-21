@@ -101,6 +101,3 @@ vendor with an executed contract and only aggregated data comes out
 - This is a single point-in-time assessment tool — real vendor risk
   management requires periodic re-review, which is why history tracking
   and review-due dates are built in.
-
-See [`NOTES_vendor_risk.md`](NOTES_vendor_risk.md) for a fuller
-walkthrough of the design decisions and code structure.
