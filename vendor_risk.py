@@ -123,11 +123,13 @@ MEDIUM_SENSITIVITY_KEYWORDS = [
 ]
 LOW_SENSITIVITY_KEYWORDS = ["public", "marketing", "aggregate", "anonymi"]
 
-# Catches "none", "no data", "no customer data", "n/a", etc. Checked before
-# keyword matching so a negated phrase isn't caught by a substring like
-# "customer data" inside "no customer data".
+# Catches "none", "no data", "no customer data", "n/a", "none - just X", etc.
+# Checked before keyword matching so a negated phrase isn't caught by a
+# substring like "customer data" inside "no customer data". Matches at the
+# START of the text (not just an exact full match) so trailing explanation
+# text ("none - automated validation only") is still caught.
 NO_ACCESS_RE = re.compile(
-    r"^(none|no|n/?a)\.?$|\bno\b[\w\s]{0,20}\b(data|access|information|pii)\b")
+    r"^(none|no|n/?a)\b|\bno\b[\w\s]{0,20}\b(data|access|information|pii)\b")
 
 
 def finding(vendor, service, data_access, contract, sensitivity,
